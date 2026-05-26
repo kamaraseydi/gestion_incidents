@@ -47,7 +47,7 @@ class Incident:
         return self.statut == Statut.RESOLU.value
 
     def __str__(self):
-        return (f"[{self.priorite}] {self.titre} "
+        return (f"Priorité [{self.priorite}] {self.titre} "
                 f"- Statut: {self.statut}")
 
     def __repr__(self):
