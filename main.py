@@ -1,16 +1,22 @@
-from create_tables import creer_tables
-from insert_test_data import inserer_donnees_test
 from menu.auth import Auth
+from menu.interface import lancer_interface
 
-# 1. Créer les tables
-creer_tables()
 
-# 2. Insérer les données de test
-inserer_donnees_test()
+def main():
+    """Point d'entrée principal"""
+    auth = Auth()
 
-# 3. Tester l'authentification
-auth = Auth()
-utilisateur = auth.connexion()
+    # Authentification
+    utilisateur = auth.connexion()
 
-if utilisateur:
-    print(f"\nConnecté en tant que : {utilisateur.role}")
+    if utilisateur:
+        # Lancer le bon menu
+        lancer_interface(utilisateur)
+        # Déconnexion
+        auth.deconnexion()
+    else:
+        print("❌ Authentification échouée")
+
+
+if __name__ == "__main__":
+    main()

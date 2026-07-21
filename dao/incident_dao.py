@@ -128,19 +128,20 @@ class IncidentDAO(BaseDAO):
             conn.close()
 
     def get_par_utilisateur(self, utilisateur_id):
-        """Retourne les incidents d'un utilisateur"""
         conn = self.db.get_connexion()
         if conn is None:
             return []
         try:
             cursor = conn.cursor()
             cursor.execute("""
-                SELECT id, titre, description,
-                       priorite, statut,
-                       date_creation, utilisateur_id
-                FROM incident
-                WHERE utilisateur_id = %s
-                ORDER BY date_creation DESC
+                SELECT i.id, i.titre, i.description,
+                       i.priorite, i.statut,
+                       i.date_creation, i.utilisateur_id,
+                       u.nom, u.prenom
+                FROM incident i
+                JOIN utilisateur u ON i.utilisateur_id = u.id
+                WHERE i.utilisateur_id = %s
+                ORDER BY i.date_creation DESC
             """, (utilisateur_id,))
 
             rows = cursor.fetchall()
@@ -153,7 +154,8 @@ class IncidentDAO(BaseDAO):
                     priorite=row[3],
                     statut=row[4],
                     date_creation=row[5],
-                    utilisateur_id=row[6]
+                    utilisateur_id=row[6],
+                    utilisateur_nom=f"{row[8]} {row[7]}"  # ✅ ajouté
                 ))
             return incidents
 
