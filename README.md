@@ -150,7 +150,7 @@ OUVERT → EN_COURS → RESOLU → FERME
 
 ## 👨‍💻 Auteur
 
-**Seydi Kamara**
+**Seydi Kamara** et **Mouhamed Diop**
 - GitHub : [@kamaraseydi](https://github.com/kamaraseydi)
 - Licence 2 - Génie Logiciel
 - ISI Dakar - 2025
