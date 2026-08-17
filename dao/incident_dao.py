@@ -470,3 +470,123 @@ class IncidentDAO(BaseDAO):
         finally:
             cursor.close()
             conn.close()
+
+    def stats_par_statut(self):
+        """Nombre d'incidents par statut"""
+        conn = self.db.get_connexion()
+        if conn is None:
+            return {}
+        try:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT statut, COUNT(*) as total
+                FROM incident
+                GROUP BY statut
+                ORDER BY statut
+            """)
+            rows = cursor.fetchall()
+            return {row[0]: row[1] for row in rows}
+
+        except Exception as e:
+            print(f"❌ Erreur : {e}")
+            return {}
+        finally:
+            cursor.close()
+            conn.close()
+
+    def stats_par_priorite(self):
+        """Nombre d'incidents par priorité"""
+        conn = self.db.get_connexion()
+        if conn is None:
+            return {}
+        try:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT priorite, COUNT(*) as total
+                FROM incident
+                GROUP BY priorite
+                ORDER BY priorite
+            """)
+            rows = cursor.fetchall()
+            return {row[0]: row[1] for row in rows}
+
+        except Exception as e:
+            print(f"❌ Erreur : {e}")
+            return {}
+        finally:
+            cursor.close()
+            conn.close()
+
+    def taux_resolution_48h(self):
+        """
+        Taux d'incidents résolus en moins de 48h
+        Pourcentage sur tous les incidents résolus
+        """
+        conn = self.db.get_connexion()
+        if conn is None:
+            return 0
+        try:
+            cursor = conn.cursor()
+
+            # Total incidents résolus ou fermés
+            cursor.execute("""
+                SELECT COUNT(*) FROM incident
+                WHERE statut IN ('RESOLU', 'FERME')
+            """)
+            total_resolus = cursor.fetchone()[0]
+
+            if total_resolus == 0:
+                return 0
+
+            # Incidents résolus en moins de 48h
+            cursor.execute("""
+                SELECT COUNT(DISTINCT i.id)
+                FROM incident i
+                JOIN intervention iv ON i.id = iv.incident_id
+                WHERE i.statut IN ('RESOLU', 'FERME')
+                AND EXTRACT(EPOCH FROM (
+                    iv.date_intervention - i.date_creation
+                )) / 3600 <= 48
+            """)
+            resolus_48h = cursor.fetchone()[0]
+
+            taux = (resolus_48h / total_resolus) * 100
+            return round(taux, 2)
+
+        except Exception as e:
+            print(f"❌ Erreur : {e}")
+            return 0
+        finally:
+            cursor.close()
+            conn.close()
+
+    def temps_moyen_resolution(self):
+        """
+        Temps moyen de résolution en heures
+        """
+        conn = self.db.get_connexion()
+        if conn is None:
+            return 0
+        try:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT AVG(
+                    EXTRACT(EPOCH FROM (
+                        iv.date_intervention - i.date_creation
+                    )) / 3600
+                ) as temps_moyen
+                FROM incident i
+                JOIN intervention iv ON i.id = iv.incident_id
+                WHERE i.statut IN ('RESOLU', 'FERME')
+            """)
+            row = cursor.fetchone()
+            if row and row[0]:
+                return round(float(row[0]), 2)
+            return 0
+
+        except Exception as e:
+            print(f"❌ Erreur : {e}")
+            return 0
+        finally:
+            cursor.close()
+            conn.close()

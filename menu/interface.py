@@ -474,35 +474,77 @@ def modifier_utilisateur():
 
 
 def menu_statistiques():
-    """Statistiques pour l'admin"""
+    """Statistiques complètes pour l'admin"""
     afficher_titre("STATISTIQUES ET RAPPORTS")
 
+    # ─────────────────────────────────────
     # Incidents par statut
+    # ─────────────────────────────────────
     print("\n📊 Incidents par statut :")
     afficher_separateur()
+    stats_statut = incident_dao.stats_par_statut()
     for statut in Statut:
-        incidents = incident_dao.get_par_statut(statut.value)
-        print(f"  {statut.value:<15} : {len(incidents)}")
+        total = stats_statut.get(statut.value, 0)
+        print(f"  {statut.value:<15} : {total}")
 
+    # ─────────────────────────────────────
     # Incidents par priorité
+    # ─────────────────────────────────────
     print("\n📊 Incidents par priorité :")
     afficher_separateur()
+    stats_priorite = incident_dao.stats_par_priorite()
     for priorite in Priorite:
-        incidents = incident_dao.get_par_priorite(priorite.value)
-        print(f"  {priorite.value:<15} : {len(incidents)}")
+        total = stats_priorite.get(priorite.value, 0)
+        print(f"  {priorite.value:<15} : {total}")
 
-    # Top techniciens
-    print("\n📊 Top techniciens :")
+    # ─────────────────────────────────────
+    # Temps moyen de résolution
+    # ─────────────────────────────────────
+    print("\n📊 Temps moyen de résolution :")
     afficher_separateur()
-    print(f"{'Nom':<20} {'Interventions':<15} {'Durée moy (min)':<15}")
+    temps_moyen = incident_dao.temps_moyen_resolution()
+    print(f"  {temps_moyen} heures")
+
+    # ─────────────────────────────────────
+    # Taux résolution 48h
+    # ─────────────────────────────────────
+    print("\n📊 Taux de résolution en moins de 48h :")
     afficher_separateur()
-    stats = intervention_dao.stats_par_technicien()
-    for i, s in enumerate(stats[:3], 1):
-        print(f"{i}. {s['nom']:<20} "
+    taux = incident_dao.taux_resolution_48h()
+    print(f"  {taux}%")
+
+    # ─────────────────────────────────────
+    # Top 3 techniciens
+    # ─────────────────────────────────────
+    print("\n📊 Top 3 techniciens les plus actifs :")
+    afficher_separateur()
+    print(f"{'Rang':<6} {'Nom':<20} "
+          f"{'Interventions':<15} {'Durée moy (min)':<15}")
+    afficher_separateur()
+
+    stats_tech = intervention_dao.stats_par_technicien()
+    for i, s in enumerate(stats_tech[:3], 1):
+        print(f"  {i}.<   {s['nom']:<20} "
               f"{s['nb_interventions']:<15} "
               f"{s['duree_moyenne']:<15}")
 
-    input("\nAppuyez sur Entrée pour continuer...")
+    # ─────────────────────────────────────
+    # Stats par technicien détaillées
+    # ─────────────────────────────────────
+    print("\n📊 Détail par technicien :")
+    afficher_separateur()
+    print(f"{'Nom':<20} {'Incidents':<12} "
+          f"{'Temps moy/incident':<20}")
+    afficher_separateur()
+
+    for s in stats_tech:
+        temps_moy = (s['duree_totale'] / s['nb_interventions']
+                    if s['nb_interventions'] > 0 else 0)
+        print(f"  {s['nom']:<20} "
+              f"{s['nb_interventions']:<12} "
+              f"{round(temps_moy, 2)} min")
+
+    input("\n⏎ Appuyez sur Entrée pour continuer...")
 
 
 def lancer_interface(utilisateur):
