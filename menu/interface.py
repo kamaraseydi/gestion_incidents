@@ -62,6 +62,7 @@ def menu_utilisateur(utilisateur):
         print("3. Filtrer par statut")
         print("4. Filtrer par priorité")
         print("5. Détail d'un incident")
+        print("6. Changer mon mot de passe")  # ✅ nouveau
         print("0. Se déconnecter")
 
         choix = saisir_entier("\nVotre choix : ")
@@ -82,10 +83,35 @@ def menu_utilisateur(utilisateur):
                 filtrer_incidents_priorite(utilisateur)
             case 5:
                 detail_incident(utilisateur)
+            case 6:
+                changer_password(utilisateur)  # ✅ nouveau
             case 0:
                 break
             case _:
                 print("❌ Choix invalide")
+
+
+def changer_password(utilisateur):
+    """Change le mot de passe de l'utilisateur"""
+    afficher_titre("CHANGER MON MOT DE PASSE")
+
+    ancien = input("Ancien mot de passe : ").strip()
+    if ancien != utilisateur.password:
+        print("❌ Ancien mot de passe incorrect")
+        return
+
+    nouveau = input("Nouveau mot de passe : ").strip()
+    if len(nouveau) < 6:
+        print("❌ Mot de passe trop court")
+        return
+
+    confirmation = input("Confirmer le mot de passe : ").strip()
+    if nouveau != confirmation:
+        print("❌ Les mots de passe ne correspondent pas")
+        return
+
+    utilisateur_dao.modifier_password(utilisateur.id, nouveau)
+    utilisateur.password = nouveau
 
 
 def creer_incident(utilisateur):
@@ -93,13 +119,13 @@ def creer_incident(utilisateur):
     afficher_titre("CRÉER UN INCIDENT")
 
     titre = input("Titre : ").strip()
-    if not titre:
-        print("❌ Titre obligatoire")
+    if not titre or len(titre) < 5:
+        print("❌ Titre trop court (5 caractères minimum)")
         return
 
     description = input("Description : ").strip()
-    if not description:
-        print("❌ Description obligatoire")
+    if not description or len(description) < 10:
+        print("❌ Description trop courte (10 caractères minimum)")
         return
 
     print("\nPriorités disponibles :")
@@ -109,6 +135,20 @@ def creer_incident(utilisateur):
     priorite = input("Priorité : ").strip().upper()
     if priorite not in [p.value for p in Priorite]:
         print("❌ Priorité invalide")
+        return
+
+    # ✅ Confirmation avant création
+    print(f"\n📋 Récapitulatif :")
+    print(f"   Titre       : {titre}")
+    print(f"   Description : {description[:50]}...")
+    print(f"   Priorité    : {priorite}")
+
+    confirmation = input(
+        "\nConfirmer la création ? (oui/non) : "
+    ).strip().lower()
+
+    if confirmation != "oui":
+        print("❌ Création annulée")
         return
 
     incident = Incident(
@@ -379,8 +419,25 @@ def menu_gestion_utilisateurs():
                 modifier_utilisateur()
             case 5:
                 id_u = saisir_entier("ID à supprimer : ")
-                if id_u:
+                if id_u is None:
+                    continue
+
+                # ✅ Afficher l'utilisateur avant suppression
+                u = utilisateur_dao.trouver_par_id(id_u)
+                if not u:
+                    print("❌ Utilisateur non trouvé")
+                    continue
+
+                print(f"\n⚠️  Vous allez supprimer :")
+                print(f"   {u.prenom} {u.nom} ({u.login})")
+                confirmation = input(
+                    "Confirmer ? (oui/non) : "
+                ).strip().lower()
+
+                if confirmation == "oui":
                     utilisateur_dao.supprimer(id_u)
+                else:
+                    print("❌ Suppression annulée")
             case 0:
                 break
             case _:
@@ -410,11 +467,40 @@ def ajouter_utilisateur():
     afficher_titre("AJOUTER UN UTILISATEUR")
 
     login = input("Login : ").strip()
+    if not login:
+        print("❌ Login obligatoire")
+        return
+
+    # Vérifier login unique
+    existant = utilisateur_dao.trouver_par_login(login)
+    if existant:
+        print(f"❌ Login '{login}' déjà utilisé")
+        return
+
     password = input("Mot de passe : ").strip()
+    if not password or len(password) < 6:
+        print("❌ Mot de passe trop court (6 caractères minimum)")
+        return
+
     nom = input("Nom : ").strip().upper()
+    if not nom:
+        print("❌ Nom obligatoire")
+        return
+
     prenom = input("Prénom : ").strip().capitalize()
+    if not prenom:
+        print("❌ Prénom obligatoire")
+        return
+
     email = input("Email : ").strip()
+    if "@" not in email or "." not in email:
+        print("❌ Email invalide")
+        return
+
     service = input("Service : ").strip()
+    if not service:
+        print("❌ Service obligatoire")
+        return
 
     print("\nRôles disponibles :")
     for r in Role:
